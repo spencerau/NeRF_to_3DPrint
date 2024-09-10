@@ -6,3 +6,4 @@
 [submodule "NeRF-Novel-2D-Dataset"]
 	path = NeRF-Novel-2D-Dataset
 	url = https://github.com/spencerau/NeRF-Novel-2D-Dataset.git
+

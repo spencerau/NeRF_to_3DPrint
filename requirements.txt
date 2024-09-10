@@ -1,0 +1,10 @@
+torch           # PyTorch for neural networks
+torchvision     # For working with images in PyTorch
+opencv-python   # OpenCV for image processing
+Pillow          # Image manipulation (PIL)
+pillow-heif     # HEIF image format support for Pillow
+numpy           # Numerical operations
+matplotlib      # Visualization
+requests        # HTTP requests
+ultralytics     # YOLOv8 for object detection
+segment-anything @ git+https://github.com/facebookresearch/segment-anything.git  # SAM from GitHub
