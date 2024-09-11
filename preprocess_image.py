@@ -68,6 +68,8 @@ def downscale_image(image, width=1920, height=1080):
     
     new_size = (int(original_width * scaling_factor), int(original_height * scaling_factor))
     resized_image = cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+
+    print(f"Resized image from {image.shape[:2]} to {resized_image.shape[:2]}")
     
     return resized_image
 
@@ -87,7 +89,7 @@ def process_image(image_path, output_dir, use_segment):
     downscaled_image = downscale_image(image, 1920, 1080)
 
     # Save downscaled image
-    downscaled_image_path = os.path.join(output_dir, f"downscaled_{os.path.basename(image_path)}")
+    downscaled_image_path = os.path.join(output_dir, f"{os.path.basename(image_path)}")
     cv2.imwrite(downscaled_image_path, downscaled_image)
     print(f"Saved downscaled image to {downscaled_image_path}")
 
@@ -131,21 +133,21 @@ def process_image(image_path, output_dir, use_segment):
         segmented_object = cv2.bitwise_and(downscaled_image, mask)
 
         # Save the segmented object
-        output_image_path = os.path.join(output_dir, f"segmented_{i}_{os.path.basename(image_path)}")
+        output_image_path = os.path.join(output_dir, f"{i}_{os.path.basename(image_path)}")
         cv2.imwrite(output_image_path, segmented_object)
 
     print(f"Processed image {image_path}, results saved to {output_dir}")
 
 
 # Process all images in a directory
-def process_images_in_directory(input_dir, output_dir):
+def process_images_in_directory(input_dir, output_dir, use_segment):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     for image_name in os.listdir(input_dir):
         if image_name.lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif')):  # Handle common formats and HEIC
             image_path = os.path.join(input_dir, image_name)
-            process_image(image_path, output_dir)
+            process_image(image_path, output_dir, use_segment)
 
 
 # Command-line argument parser
