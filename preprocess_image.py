@@ -60,8 +60,20 @@ def convert_to_png(image_path):
     return image_path  # If not HEIC/HEIF, return original path
 
 
+# Function to downscale image to a given size (1920x1080)
+def downscale_image(image, width=1920, height=1080):
+    # Resize the image while maintaining aspect ratio
+    original_height, original_width = image.shape[:2]
+    scaling_factor = min(width / original_width, height / original_height)
+    
+    new_size = (int(original_width * scaling_factor), int(original_height * scaling_factor))
+    resized_image = cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+    
+    return resized_image
+
+
 # Function to process images
-def process_image(image_path, output_dir):
+def process_image(image_path, output_dir, use_segment):
     # Convert HEIC to PNG if necessary
     image_path = convert_to_png(image_path)
 
@@ -71,9 +83,21 @@ def process_image(image_path, output_dir):
         print(f"Could not read image {image_path}")
         return
 
+    # Downscale the image to 1920x1080 resolution
+    downscaled_image = downscale_image(image, 1920, 1080)
+
+    # Save downscaled image
+    downscaled_image_path = os.path.join(output_dir, f"downscaled_{os.path.basename(image_path)}")
+    cv2.imwrite(downscaled_image_path, downscaled_image)
+    print(f"Saved downscaled image to {downscaled_image_path}")
+
+    # Skip segmentation/detection if `--use_segment 0` is specified
+    if not use_segment:
+        return
+
     # Step 1: Use YOLOv8 for object detection
     model = YOLO('yolov8x.pt')  # Load pre-trained YOLOv8 model
-    results = model(image)
+    results = model(downscaled_image)
     boxes = results[0].boxes.xyxy  # Bounding boxes for detected objects
 
     if len(boxes) == 0:
@@ -89,12 +113,11 @@ def process_image(image_path, output_dir):
     sam.to(device='cuda' if torch.cuda.is_available() else 'cpu')
 
     predictor = SamPredictor(sam)
-    predictor.set_image(image)
+    predictor.set_image(downscaled_image)
 
     # Step 4: Iterate over detected bounding boxes, apply SAM, and remove background
     for i, bbox in enumerate(boxes):
-        # Convert the YOLO bounding box to a numpy array
-        bbox_np = np.array(bbox.cpu())
+        bbox_np = np.array(bbox.cpu())  # Convert the YOLO bounding box to a numpy array
 
         # Run SAM to get the segmentation mask for the object
         masks, _, _ = predictor.predict(box=bbox_np, multimask_output=False)
@@ -105,7 +128,7 @@ def process_image(image_path, output_dir):
         mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
         # Apply the mask to the original image to remove the background
-        segmented_object = cv2.bitwise_and(image, mask)
+        segmented_object = cv2.bitwise_and(downscaled_image, mask)
 
         # Save the segmented object
         output_image_path = os.path.join(output_dir, f"segmented_{i}_{os.path.basename(image_path)}")
@@ -130,6 +153,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Process images for object detection and segmentation.")
     parser.add_argument('--images', type=str, required=True, help="Path to the directory containing input images")
     parser.add_argument('--output', type=str, help="Path to the directory to save the processed images")
+    parser.add_argument('--use_segment', type=int, default=1, help="Flag to use segmentation (1) or just downscale (0)")
     return parser.parse_args()
 
 
@@ -138,5 +162,6 @@ if __name__ == "__main__":
 
     input_dir = args.images 
     output_dir = args.output if args.output else input_dir
+    use_segment = bool(args.use_segment)
 
-    process_images_in_directory(input_dir, output_dir)
+    process_images_in_directory(input_dir, output_dir, use_segment)
