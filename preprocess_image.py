@@ -60,8 +60,8 @@ def convert_to_png(image_path):
     return image_path  # If not HEIC/HEIF, return original path
 
 
-# Function to downscale image to a given size (1920x1080)
-def downscale_image(image, width=1920, height=1080):
+# Function to downscale image to a given size
+def downscale_image(image, width, height):
     # Resize the image while maintaining aspect ratio
     original_height, original_width = image.shape[:2]
     scaling_factor = min(width / original_width, height / original_height)
@@ -85,8 +85,8 @@ def process_image(image_path, output_dir, use_segment):
         print(f"Could not read image {image_path}")
         return
 
-    # Downscale the image to 1920x1080 resolution
-    downscaled_image = downscale_image(image, 1920, 1080)
+    # Downscale the image to 2560x1440 resolution
+    downscaled_image = downscale_image(image, 2560, 1440)
 
     # Save downscaled image
     downscaled_image_path = os.path.join(output_dir, f"{os.path.basename(image_path)}")
